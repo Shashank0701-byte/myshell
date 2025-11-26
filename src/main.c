@@ -19,6 +19,7 @@
 #include "builtins.h"
 #include "error.h"
 #include "readline.h"
+#include "jobs.h"
 
 
 
@@ -386,9 +387,24 @@ int execute_pipeline(struct command **commands, int num_cmds) {
         close(pipefds[i]);
     }
     
-    // Wait for all children
-    for (i = 0; i < num_cmds; i++) {
-        wait(&status);
+    // Check if this is a background job (last command has background flag)
+    int is_background = (num_cmds > 0 && commands[num_cmds - 1]->background);
+    
+    if (is_background) {
+        // Add to job list - use the last command's PID
+        // For pipelines, we track the last process
+        char cmd_str[1024] = "";
+        for (int j = 0; j < num_cmds; j++) {
+            if (j > 0) strcat(cmd_str, " | ");
+            strcat(cmd_str, commands[j]->argv[0]);
+        }
+        // Note: pid variable holds the last forked PID
+        add_job(pid, cmd_str, 1);
+    } else {
+        // Wait for all children (foreground)
+        for (i = 0; i < num_cmds; i++) {
+            wait(&status);
+        }
     }
     
     return 0;
@@ -559,8 +575,14 @@ int main(void) {
     // Initialize history
     init_history();
     
+    // Initialize job control
+    init_jobs();
+    
     // REPL: Read-Eval-Print Loop
     while (1) {
+        // Check for completed jobs
+        check_jobs();
+        
         // Read user input using custom readline (handles prompt and history)
         if (line) {
             free(line);
@@ -624,6 +646,7 @@ int main(void) {
     // Free allocated memory
     free(line);
     free_history();
+    free_jobs();
     
     return 0;
 }

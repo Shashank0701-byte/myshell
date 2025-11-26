@@ -29,4 +29,25 @@ int builtin_cd(char **argv);
  */
 int builtin_exit(char **argv);
 
+/**
+ * Built-in: jobs - List all jobs
+ * @param argv: Command arguments
+ * @return: 0 on success
+ */
+int builtin_jobs(char **argv);
+
+/**
+ * Built-in: fg - Bring job to foreground
+ * @param argv: Command arguments
+ * @return: 0 on success, 1 on failure
+ */
+int builtin_fg(char **argv);
+
+/**
+ * Built-in: bg - Continue job in background
+ * @param argv: Command arguments
+ * @return: 0 on success, 1 on failure
+ */
+int builtin_bg(char **argv);
+
 #endif // BUILTINS_H

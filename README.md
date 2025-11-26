@@ -33,6 +33,11 @@ A robust, custom Unix shell implementation in C, designed for educational purpos
 - **Command History**:
   - Use **Up/Down Arrows** to navigate previous commands.
   - History persists for the session.
+- **Job Control** (POSIX only):
+  - **`jobs`**: List all background and stopped jobs.
+  - **`fg`**: Bring a job to the foreground.
+  - **`bg`**: Continue a stopped job in the background.
+  - Track and manage background processes.
 
 ## 🛠️ Installation & Build
 
@@ -51,7 +56,9 @@ mkdir -p obj
 gcc -Wall -Wextra -Iinclude -c src/main.c -o obj/main.o
 gcc -Wall -Wextra -Iinclude -c src/builtins.c -o obj/builtins.o
 gcc -Wall -Wextra -Iinclude -c src/error.c -o obj/error.o
-gcc obj/main.o obj/builtins.o obj/error.o -o myshell
+gcc -Wall -Wextra -Iinclude -c src/readline.c -o obj/readline.o
+gcc -Wall -Wextra -Iinclude -c src/jobs.c -o obj/jobs.o
+gcc obj/main.o obj/builtins.o obj/error.o obj/readline.o obj/jobs.o -o myshell
 ```
 
 ## 📖 Usage
@@ -85,7 +92,15 @@ myshell> ps aux | grep user | sort | head -5
 **Background Jobs**
 ```bash
 myshell> sleep 10 &
-[Background] PID: 12345
+[1] 12345
+myshell> jobs
+[1]+ Running		sleep 10
+myshell> fg 1
+sleep 10
+# Press Ctrl+Z to stop
+[1]+  Stopped		sleep 10
+myshell> bg 1
+[1]+ sleep 10 &
 ```
 
 **Configuration**
@@ -105,10 +120,14 @@ myshell/
 ├── src/
 │   ├── main.c          # Core logic: REPL, parser, executor
 │   ├── builtins.c      # Built-in command implementations
-│   └── error.c         # Centralized error handling
+│   ├── error.c         # Centralized error handling
+│   ├── readline.c      # Command history and input handling
+│   └── jobs.c          # Job control system
 ├── include/
 │   ├── builtins.h      # Headers for built-ins
-│   └── error.h         # Headers for error handling
+│   ├── error.h         # Headers for error handling
+│   ├── readline.h      # Headers for readline
+│   └── jobs.h          # Headers for job control
 ├── obj/                # Compiled object files
 ├── build.sh            # Build automation script
 └── README.md           # Documentation
@@ -123,13 +142,14 @@ myshell/
     *   **POSIX**: Uses `fork()`, `pipe()`, `dup2()`, and `execvp()` for full functionality.
     *   **Windows**: Uses `_spawnvp()` with platform-specific adaptations.
 5.  **Signal Handler**: Manages `SIGINT` to protect the shell process.
+6.  **Job Manager**: Tracks background jobs, handles `jobs`, `fg`, and `bg` commands.
 
 ## ⚠️ Limitations
 
-- **Job Control**: No support for `fg`, `bg`, or `jobs` commands yet.
 - **Tab Completion**: Not currently implemented.
 - **Environment Variables**: Cannot set/export custom variables (except via `cd`).
 - **Scripting**: No support for control structures like `if` or `while`.
+- **Windows Job Control**: `fg` and `bg` commands not supported on Windows.
 
 ## 🤝 Contributing
 

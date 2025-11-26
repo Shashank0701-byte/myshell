@@ -19,9 +19,12 @@ gcc -Wall -Wextra -Iinclude -c src/error.c -o obj/error.o || exit 1
 echo "Compiling readline.c..."
 gcc -Wall -Wextra -Iinclude -c src/readline.c -o obj/readline.o || exit 1
 
+echo "Compiling jobs.c..."
+gcc -Wall -Wextra -Iinclude -c src/jobs.c -o obj/jobs.o || exit 1
+
 # Link
 echo "Linking..."
-gcc obj/main.o obj/builtins.o obj/error.o obj/readline.o -o myshell || exit 1
+gcc obj/main.o obj/builtins.o obj/error.o obj/readline.o obj/jobs.o -o myshell || exit 1
 
 echo "✓ Build successful! Run with: ./myshell"
 
