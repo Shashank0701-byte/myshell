@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <direct.h>
 #include "builtins.h"
 
 // List of built-in command names
@@ -56,16 +56,20 @@ int builtin_cd(char **argv) {
         // No argument: go to HOME
         char *home = getenv("HOME");
         if (home == NULL) {
+            // Try USERPROFILE on Windows
+            home = getenv("USERPROFILE");
+        }
+        if (home == NULL) {
             fprintf(stderr, "myshell: cd: HOME not set\n");
             return 1;
         }
-        if (chdir(home) != 0) {
+        if (_chdir(home) != 0) {
             perror("myshell: cd");
             return 1;
         }
     } else {
         // Change to specified directory
-        if (chdir(argv[1]) != 0) {
+        if (_chdir(argv[1]) != 0) {
             perror("myshell: cd");
             return 1;
         }

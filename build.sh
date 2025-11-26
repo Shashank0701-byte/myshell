@@ -7,15 +7,15 @@ echo "Building myshell..."
 mkdir -p obj
 
 # Compile source files
-gcc -Wall -Wextra -Iinclude -c src/main.c -o obj/main.o
-gcc -Wall -Wextra -Iinclude -c src/builtins.c -o obj/builtins.o
+echo "Compiling main.c..."
+gcc -Wall -Wextra -Iinclude -c src/main.c -o obj/main.o || exit 1
+
+echo "Compiling builtins.c..."
+gcc -Wall -Wextra -Iinclude -c src/builtins.c -o obj/builtins.o || exit 1
 
 # Link
-gcc obj/main.o obj/builtins.o -o myshell
+echo "Linking..."
+gcc obj/main.o obj/builtins.o -o myshell || exit 1
 
-if [ $? -eq 0 ]; then
-    echo "Build successful! Run with: ./myshell"
-else
-    echo "Build failed!"
-    exit 1
-fi
+echo "✓ Build successful! Run with: ./myshell"
+

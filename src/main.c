@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <process.h>
+#include <io.h>
+#include <fcntl.h>
 #include "builtins.h"
+
+
 
 
 #define TOKEN_DELIMITERS " \t\r\n\a"
@@ -144,6 +149,78 @@ char **tokenize(char *line) {
     return tokens;
 }
 
+/**
+ * Execute an external command using _spawnvp (Windows-compatible)
+ * @param cmd: Command structure with argv, redirection, and background info
+ * @return: 0 on success, 1 on failure
+ */
+int execute_external(struct command *cmd) {
+    int status;
+    int saved_stdin = -1, saved_stdout = -1;
+    int fd_in = -1, fd_out = -1;
+    
+    if (cmd == NULL || cmd->argv == NULL || cmd->argv[0] == NULL) {
+        return 1;
+    }
+    
+    // Handle input redirection
+    if (cmd->input_file != NULL) {
+        saved_stdin = _dup(0);  // Save stdin
+        fd_in = _open(cmd->input_file, _O_RDONLY);
+        if (fd_in < 0) {
+            perror("myshell: input redirection");
+            return 1;
+        }
+        _dup2(fd_in, 0);  // Redirect stdin
+        _close(fd_in);
+    }
+    
+    // Handle output redirection
+    if (cmd->output_file != NULL) {
+        saved_stdout = _dup(1);  // Save stdout
+        fd_out = _open(cmd->output_file, _O_WRONLY | _O_CREAT | _O_TRUNC, 0644);
+        if (fd_out < 0) {
+            perror("myshell: output redirection");
+            if (saved_stdin >= 0) {
+                _dup2(saved_stdin, 0);
+                _close(saved_stdin);
+            }
+            return 1;
+        }
+        _dup2(fd_out, 1);  // Redirect stdout
+        _close(fd_out);
+    }
+    
+    // Spawn the process
+    if (cmd->background) {
+        // Background process - don't wait
+        status = _spawnvp(_P_NOWAIT, cmd->argv[0], (const char* const*)cmd->argv);
+        if (status == -1) {
+            fprintf(stderr, "myshell: %s: command not found\n", cmd->argv[0]);
+        } else {
+            printf("[Background] PID: %d\n", status);
+        }
+    } else {
+        // Foreground process - wait for completion
+        status = _spawnvp(_P_WAIT, cmd->argv[0], (const char* const*)cmd->argv);
+        if (status == -1) {
+            fprintf(stderr, "myshell: %s: command not found\n", cmd->argv[0]);
+        }
+    }
+    
+    // Restore stdin/stdout
+    if (saved_stdin >= 0) {
+        _dup2(saved_stdin, 0);
+        _close(saved_stdin);
+    }
+    if (saved_stdout >= 0) {
+        _dup2(saved_stdout, 1);
+        _close(saved_stdout);
+    }
+    
+    return (status == -1) ? 1 : 0;
+}
+
 int main(void) {
     char *line = NULL;
     size_t len = 0;
@@ -188,23 +265,8 @@ int main(void) {
                         break;
                     }
                 } else {
-                    // Display parsed command (for now, until we implement exec)
-                    printf("Command: %s\n", line);
-                    printf("  argv: ");
-                    for (int i = 0; cmd->argv[i] != NULL; i++) {
-                        printf("[%s] ", cmd->argv[i]);
-                    }
-                    printf("\n");
-                    
-                    if (cmd->input_file) {
-                        printf("  input: %s\n", cmd->input_file);
-                    }
-                    if (cmd->output_file) {
-                        printf("  output: %s\n", cmd->output_file);
-                    }
-                    if (cmd->background) {
-                        printf("  background: yes\n");
-                    }
+                    // Execute external command
+                    execute_external(cmd);
                 }
                 
                 // Free command structure
