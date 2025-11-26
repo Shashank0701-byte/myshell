@@ -1,0 +1,4 @@
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+int main() { readline("test"); return 0; }

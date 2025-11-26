@@ -30,6 +30,9 @@ A robust, custom Unix shell implementation in C, designed for educational purpos
 - **Robust Error Handling**:
   - Consistent, informative error messages.
   - Detailed system error reporting (errno).
+- **Command History**:
+  - Use **Up/Down Arrows** to navigate previous commands.
+  - History persists for the session.
 
 ## 🛠️ Installation & Build
 
@@ -124,7 +127,6 @@ myshell/
 ## ⚠️ Limitations
 
 - **Job Control**: No support for `fg`, `bg`, or `jobs` commands yet.
-- **Command History**: No up/down arrow navigation (requires readline integration).
 - **Tab Completion**: Not currently implemented.
 - **Environment Variables**: Cannot set/export custom variables (except via `cd`).
 - **Scripting**: No support for control structures like `if` or `while`.

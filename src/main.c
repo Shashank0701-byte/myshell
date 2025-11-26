@@ -18,6 +18,7 @@
 
 #include "builtins.h"
 #include "error.h"
+#include "readline.h"
 
 
 
@@ -548,8 +549,6 @@ void load_rc_file(void) {
 
 int main(void) {
     char *line = NULL;
-    size_t len = 0;
-    ssize_t nread;
     
     // Setup signal handlers
     setup_signal_handlers();
@@ -557,24 +556,28 @@ int main(void) {
     // Load and execute RC file
     load_rc_file();
     
+    // Initialize history
+    init_history();
+    
     // REPL: Read-Eval-Print Loop
     while (1) {
-        // Display prompt
-        printf("myshell> ");
-        fflush(stdout);
+        // Read user input using custom readline (handles prompt and history)
+        if (line) {
+            free(line);
+            line = NULL;
+        }
         
-        // Read user input using getline
-        nread = getline(&line, &len, stdin);
+        line = read_line("myshell> ");
         
-        // Handle EOF (Ctrl+D) or error
-        if (nread == -1) {
+        // Handle EOF or error
+        if (line == NULL) {
             printf("\n");
             break;
         }
         
-        // Remove trailing newline
-        if (line[nread - 1] == '\n') {
-            line[nread - 1] = '\0';
+        // Add to history if not empty
+        if (strlen(line) > 0) {
+            add_history(line);
         }
         
         // Process the command
@@ -620,6 +623,7 @@ int main(void) {
     
     // Free allocated memory
     free(line);
+    free_history();
     
     return 0;
 }
