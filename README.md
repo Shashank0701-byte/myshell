@@ -29,6 +29,11 @@ A custom shell implementation in C with support for command execution, I/O redir
 - **Child Interruption** - Foreground commands can be interrupted
 - **Clean Prompt** - Displays new prompt after Ctrl+C
 
+### ✅ Error Handling
+- **Consistent Messages** - All errors follow same format
+- **Informative** - Includes context and errno details
+- **User-Friendly** - Clear, helpful error descriptions
+
 ## Building
 
 ### Using build script:

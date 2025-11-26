@@ -17,6 +17,8 @@
 #endif
 
 #include "builtins.h"
+#include "error.h"
+
 
 
 
@@ -71,7 +73,7 @@ void setup_signal_handlers(void) {
 struct command *init_command(void) {
     struct command *cmd = malloc(sizeof(struct command));
     if (!cmd) {
-        fprintf(stderr, "myshell: allocation error\n");
+        error_allocation("init_command");
         exit(EXIT_FAILURE);
     }
     cmd->argv = NULL;
@@ -107,7 +109,7 @@ struct command *parse_command(char **tokens) {
     // Allocate argv array
     cmd->argv = malloc(argv_size * sizeof(char*));
     if (!cmd->argv) {
-        fprintf(stderr, "myshell: allocation error\n");
+        error_allocation("parse_command argv");
         exit(EXIT_FAILURE);
     }
     
@@ -138,7 +140,7 @@ struct command *parse_command(char **tokens) {
                 argv_size += TOKEN_BUFFER_SIZE;
                 cmd->argv = realloc(cmd->argv, argv_size * sizeof(char*));
                 if (!cmd->argv) {
-                    fprintf(stderr, "myshell: allocation error\n");
+                    error_allocation("parse_command realloc");
                     exit(EXIT_FAILURE);
                 }
             }
@@ -307,7 +309,7 @@ int execute_pipeline(struct command **commands, int num_cmds) {
     // Create all pipes
     for (i = 0; i < num_cmds - 1; i++) {
         if (pipe(pipefds + i * 2) < 0) {
-            perror("myshell: pipe");
+            error_pipe();
             return 1;
         }
     }
@@ -317,7 +319,7 @@ int execute_pipeline(struct command **commands, int num_cmds) {
         pid = fork();
         
         if (pid < 0) {
-            perror("myshell: fork");
+            error_fork();
             return 1;
         } else if (pid == 0) {
             // Child process
@@ -372,7 +374,7 @@ int execute_pipeline(struct command **commands, int num_cmds) {
             
             // Execute the command
             if (execvp(commands[i]->argv[0], commands[i]->argv) < 0) {
-                fprintf(stderr, "myshell: %s: command not found\n", commands[i]->argv[0]);
+                error_command_not_found(commands[i]->argv[0]);
                 exit(EXIT_FAILURE);
             }
         }

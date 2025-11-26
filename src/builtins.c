@@ -3,6 +3,8 @@
 #include <string.h>
 #include <direct.h>
 #include "builtins.h"
+#include "error.h"
+
 
 // List of built-in command names
 char *builtin_names[] = {
@@ -60,17 +62,17 @@ int builtin_cd(char **argv) {
             home = getenv("USERPROFILE");
         }
         if (home == NULL) {
-            fprintf(stderr, "myshell: cd: HOME not set\n");
+            error_syntax("cd: HOME environment variable not set");
             return 1;
         }
         if (_chdir(home) != 0) {
-            perror("myshell: cd");
+            error_system("cd");
             return 1;
         }
     } else {
         // Change to specified directory
         if (_chdir(argv[1]) != 0) {
-            perror("myshell: cd");
+            error_system("cd");
             return 1;
         }
     }
