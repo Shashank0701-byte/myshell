@@ -2,35 +2,45 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_INPUT 1024
-
 int main(void) {
-    char input[MAX_INPUT];
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t nread;
     
+    // REPL: Read-Eval-Print Loop
     while (1) {
         // Display prompt
         printf("myshell> ");
         fflush(stdout);
         
-        // Read input
-        if (fgets(input, MAX_INPUT, stdin) == NULL) {
+        // Read user input using getline
+        nread = getline(&line, &len, stdin);
+        
+        // Handle EOF (Ctrl+D) or error
+        if (nread == -1) {
+            printf("\n");
             break;
         }
         
-        // Remove newline
-        input[strcspn(input, "\n")] = 0;
+        // Remove trailing newline
+        if (line[nread - 1] == '\n') {
+            line[nread - 1] = '\0';
+        }
         
         // Exit command
-        if (strcmp(input, "exit") == 0) {
+        if (strcmp(line, "exit") == 0) {
             printf("Goodbye!\n");
             break;
         }
         
-        // Echo the command for now
-        if (strlen(input) > 0) {
-            printf("You entered: %s\n", input);
+        // Print back the command
+        if (strlen(line) > 0) {
+            printf("Command: %s\n", line);
         }
     }
+    
+    // Free allocated memory
+    free(line);
     
     return 0;
 }
