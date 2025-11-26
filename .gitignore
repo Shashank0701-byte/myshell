@@ -35,3 +35,24 @@ core.*
 *.tmp
 *.log
 
+# Test output files
+test_data.txt
+sorted_output.txt
+output.txt
+files.txt
+input.txt
+unsorted.txt
+sorted.txt
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Git files
+*.orig
+*.rej
+.git/
+
+# Keep files
+!.keep

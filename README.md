@@ -24,6 +24,11 @@ A custom shell implementation in C with support for command execution, I/O redir
 - **Background Processes** (`&`) - Run commands in background
 - **PID Display** - Shows process ID for background jobs
 
+### ✅ Signal Handling
+- **Ctrl+C Protection** - Shell ignores SIGINT, stays alive
+- **Child Interruption** - Foreground commands can be interrupted
+- **Clean Prompt** - Displays new prompt after Ctrl+C
+
 ## Building
 
 ### Using build script:
@@ -72,15 +77,23 @@ myshell> sort < input.txt > sorted.txt
 
 ### Piping
 ```bash
-# Simple pipe
+# Simple pipe (2 commands)
 myshell> ls -la | grep txt
 
-# Multiple pipes
+# Multiple pipes (3 commands)
 myshell> cat file.txt | grep error | wc -l
+
+# Even more pipes (4+ commands)
+myshell> ps aux | grep user | awk '{print $2}' | sort | head -5
 
 # With redirection
 myshell> cat < input.txt | sort | uniq > output.txt
+
+# Complex pipeline
+myshell> cat /var/log/syslog | grep ERROR | cut -d' ' -f5- | sort | uniq -c | sort -rn
 ```
+
+**Note**: Supports **unlimited number of pipes** using loop-based implementation!
 
 ### Background Execution
 ```bash
@@ -173,8 +186,8 @@ execvp(argv[0], argv);
 
 ## Limitations
 
-1. **No job control** - Can't bring background jobs to foreground
-2. **No signal handling** - Ctrl+C terminates shell
+1. **No job control** - Can't bring background jobs to foreground (fg, bg, jobs)
+2. **No job suspension** - Ctrl+Z doesn't suspend processes
 3. **No command history** - No up/down arrow support
 4. **No tab completion** - No auto-complete
 5. **Windows pipes** - Limited to sequential execution

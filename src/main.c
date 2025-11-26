@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #ifdef _WIN32
 // Windows headers
@@ -21,6 +22,7 @@
 
 
 
+
 #define TOKEN_DELIMITERS " \t\r\n\a"
 #define TOKEN_BUFFER_SIZE 64
 
@@ -36,6 +38,32 @@ struct command {
 
 // Forward declarations
 int execute_external(struct command *cmd);
+
+/**
+ * Signal handler for SIGINT (Ctrl+C)
+ * Ignores the signal in the shell, but children will have default behavior
+ */
+void sigint_handler(int sig) {
+    (void)sig;  // Unused parameter
+    // Print newline for clean prompt
+    printf("\n");
+    // Display prompt again
+    printf("myshell> ");
+    fflush(stdout);
+}
+
+/**
+ * Setup signal handlers for the shell
+ */
+void setup_signal_handlers(void) {
+    // Ignore SIGINT (Ctrl+C) in the shell
+    signal(SIGINT, sigint_handler);
+    
+    // Optionally ignore SIGQUIT (Ctrl+\) as well
+    #ifndef _WIN32
+    signal(SIGQUIT, SIG_IGN);
+    #endif
+}
 
 /**
  * Initialize a command structure
@@ -294,6 +322,12 @@ int execute_pipeline(struct command **commands, int num_cmds) {
         } else if (pid == 0) {
             // Child process
             
+            // Restore default signal handlers in child
+            signal(SIGINT, SIG_DFL);
+            #ifndef _WIN32
+            signal(SIGQUIT, SIG_DFL);
+            #endif
+            
             // If not the first command, get input from previous pipe
             if (i > 0) {
                 if (dup2(pipefds[(i - 1) * 2], STDIN_FILENO) < 0) {
@@ -434,6 +468,9 @@ int main(void) {
     char *line = NULL;
     size_t len = 0;
     ssize_t nread;
+    
+    // Setup signal handlers
+    setup_signal_handlers();
     
     // REPL: Read-Eval-Print Loop
     while (1) {
