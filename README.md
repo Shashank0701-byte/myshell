@@ -34,6 +34,10 @@ A custom shell implementation in C with support for command execution, I/O redir
 - **Informative** - Includes context and errno details
 - **User-Friendly** - Clear, helpful error descriptions
 
+### ✅ Configuration
+- **Startup Script** - Loads `~/.myshellrc` on startup
+- **Customization** - Run commands automatically when shell starts
+
 ## Building
 
 ### Using build script:

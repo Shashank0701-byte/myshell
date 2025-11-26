@@ -1,0 +1,17 @@
+# .myshellrc - Startup configuration for myshell
+# Place this file in your home directory (~/.myshellrc)
+
+# Print a welcome message
+echo "Welcome to myshell!"
+echo "Loading configuration..."
+
+# You can run any valid myshell command here
+
+# Example: List files in current directory
+# ls -la
+
+# Example: Show current date
+# date
+
+echo "Configuration loaded successfully."
+echo "Happy coding!"

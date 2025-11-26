@@ -466,6 +466,86 @@ int execute_external(struct command *cmd) {
     return (status == -1) ? 1 : 0;
 }
 
+/**
+ * Load and execute commands from ~/.myshellrc
+ */
+void load_rc_file(void) {
+    char rc_path[1024];
+    char *home;
+    FILE *rc_file;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t nread;
+    int line_num = 0;
+    
+    // Get home directory
+    home = getenv("HOME");
+    if (home == NULL) {
+        #ifdef _WIN32
+        home = getenv("USERPROFILE");
+        #endif
+    }
+    
+    if (home == NULL) {
+        // No home directory, skip rc file
+        return;
+    }
+    
+    // Construct rc file path
+    snprintf(rc_path, sizeof(rc_path), "%s/.myshellrc", home);
+    
+    // Try to open rc file
+    rc_file = fopen(rc_path, "r");
+    if (rc_file == NULL) {
+        // RC file doesn't exist, that's okay
+        return;
+    }
+    
+    printf("Loading %s...\n", rc_path);
+    
+    // Read and execute each line
+    while ((nread = getline(&line, &len, rc_file)) != -1) {
+        line_num++;
+        
+        // Remove trailing newline
+        if (line[nread - 1] == '\n') {
+            line[nread - 1] = '\0';
+        }
+        
+        // Skip empty lines and comments
+        if (strlen(line) == 0 || line[0] == '#') {
+            continue;
+        }
+        
+        // Tokenize the input
+        char **tokens = tokenize(line);
+        
+        // Split into pipeline commands
+        struct command **commands = NULL;
+        int num_cmds = split_pipeline(tokens, &commands);
+        
+        // Execute the pipeline
+        if (num_cmds > 0) {
+            execute_pipeline(commands, num_cmds);
+            
+            // Free all commands
+            for (int i = 0; i < num_cmds; i++) {
+                free_command(commands[i]);
+            }
+            free(commands);
+        }
+        
+        // Free tokens array
+        free(tokens);
+    }
+    
+    // Cleanup
+    free(line);
+    fclose(rc_file);
+    
+    printf("RC file loaded.\n\n");
+}
+
 int main(void) {
     char *line = NULL;
     size_t len = 0;
@@ -473,6 +553,9 @@ int main(void) {
     
     // Setup signal handlers
     setup_signal_handlers();
+    
+    // Load and execute RC file
+    load_rc_file();
     
     // REPL: Read-Eval-Print Loop
     while (1) {
