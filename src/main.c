@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "builtins.h"
+
 
 #define TOKEN_DELIMITERS " \t\r\n\a"
 #define TOKEN_BUFFER_SIZE 64
@@ -167,12 +169,6 @@ int main(void) {
             line[nread - 1] = '\0';
         }
         
-        // Exit command
-        if (strcmp(line, "exit") == 0) {
-            printf("Goodbye!\n");
-            break;
-        }
-        
         // Print back the command
         if (strlen(line) > 0) {
             // Tokenize the input
@@ -181,23 +177,34 @@ int main(void) {
             // Parse into command structure
             struct command *cmd = parse_command(tokens);
             
-            if (cmd != NULL) {
-                // Display parsed command
-                printf("Command: %s\n", line);
-                printf("  argv: ");
-                for (int i = 0; cmd->argv[i] != NULL; i++) {
-                    printf("[%s] ", cmd->argv[i]);
-                }
-                printf("\n");
-                
-                if (cmd->input_file) {
-                    printf("  input: %s\n", cmd->input_file);
-                }
-                if (cmd->output_file) {
-                    printf("  output: %s\n", cmd->output_file);
-                }
-                if (cmd->background) {
-                    printf("  background: yes\n");
+            if (cmd != NULL && cmd->argv[0] != NULL) {
+                // Check if it's a built-in command
+                if (is_builtin(cmd->argv[0])) {
+                    int result = execute_builtin(cmd->argv);
+                    if (result == -1) {
+                        // Exit signal
+                        free_command(cmd);
+                        free(tokens);
+                        break;
+                    }
+                } else {
+                    // Display parsed command (for now, until we implement exec)
+                    printf("Command: %s\n", line);
+                    printf("  argv: ");
+                    for (int i = 0; cmd->argv[i] != NULL; i++) {
+                        printf("[%s] ", cmd->argv[i]);
+                    }
+                    printf("\n");
+                    
+                    if (cmd->input_file) {
+                        printf("  input: %s\n", cmd->input_file);
+                    }
+                    if (cmd->output_file) {
+                        printf("  output: %s\n", cmd->output_file);
+                    }
+                    if (cmd->background) {
+                        printf("  background: yes\n");
+                    }
                 }
                 
                 // Free command structure

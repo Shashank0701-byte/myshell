@@ -1,9 +1,13 @@
 # Executable
 myshell
+myshell.exe
 
-# Object files
+# Object files and build artifacts
 obj/
 *.o
+*.a
+*.so
+*.dylib
 
 # Editor files
 *.swp
@@ -11,7 +15,23 @@ obj/
 *~
 .vscode/
 .idea/
+*.sublime-*
 
 # OS files
 .DS_Store
 Thumbs.db
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Core dumps
+core
+core.*
+
+# Temporary files
+*.tmp
+*.log
+
