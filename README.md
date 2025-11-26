@@ -1,225 +1,138 @@
-# myshell - A Simple Unix Shell
+# myshell
 
-A custom shell implementation in C with support for command execution, I/O redirection, piping, and background processes.
+A robust, custom Unix shell implementation in C, designed for educational purposes and practical use. It features a REPL loop, command execution, I/O redirection, piping, background processes, and more.
 
-## Features
+## 🚀 Features
 
-### ✅ Core Functionality
-- **REPL Loop** - Read-Eval-Print Loop with `myshell>` prompt
-- **Command Tokenization** - Dynamic parsing with `getline()`
-- **Built-in Commands** - `cd`, `exit`
-- **External Commands** - Execute any system command
+### Core Functionality
+- **REPL Interface**: Interactive Read-Eval-Print Loop with a custom prompt.
+- **Command Execution**: Seamlessly executes external system commands.
+- **Built-in Commands**: Native support for `cd` (change directory) and `exit`.
+- **Cross-Platform**: Runs on POSIX systems (Linux, macOS) and Windows (MinGW).
 
-### ✅ I/O Redirection
-- **Input Redirection** (`<`) - Read input from file
-- **Output Redirection** (`>`) - Write output to file
-- **Combined** - Use both together
+### Advanced Features
+- **I/O Redirection**:
+  - Input (`<`): Read from files.
+  - Output (`>`): Write to files.
+  - Combined: `sort < input.txt > output.txt`.
+- **Piping**:
+  - Chain multiple commands: `cmd1 | cmd2 | cmd3`.
+  - Supports unlimited pipe depth.
+- **Background Execution**:
+  - Run commands asynchronously using `&`.
+  - Displays PID for background jobs.
+- **Signal Handling**:
+  - **Ctrl+C Protection**: The shell ignores SIGINT, preventing accidental termination.
+  - **Graceful Interruption**: Foreground commands can be interrupted without killing the shell.
+- **Configuration**:
+  - Loads startup commands from `~/.myshellrc`.
+  - Customize your environment automatically on launch.
+- **Robust Error Handling**:
+  - Consistent, informative error messages.
+  - Detailed system error reporting (errno).
 
-### ✅ Piping
-- **Command Chaining** (`|`) - Connect multiple commands
-- **Full POSIX Support** - Uses `pipe()`, `fork()`, and `dup2()`
-- **Windows Note** - Limited pipe support on Windows (executes sequentially)
+## 🛠️ Installation & Build
 
-### ✅ Background Execution
-- **Background Processes** (`&`) - Run commands in background
-- **PID Display** - Shows process ID for background jobs
+### Prerequisites
+- GCC Compiler
+- Make (optional)
 
-### ✅ Signal Handling
-- **Ctrl+C Protection** - Shell ignores SIGINT, stays alive
-- **Child Interruption** - Foreground commands can be interrupted
-- **Clean Prompt** - Displays new prompt after Ctrl+C
-
-### ✅ Error Handling
-- **Consistent Messages** - All errors follow same format
-- **Informative** - Includes context and errno details
-- **User-Friendly** - Clear, helpful error descriptions
-
-### ✅ Configuration
-- **Startup Script** - Loads `~/.myshellrc` on startup
-- **Customization** - Run commands automatically when shell starts
-
-## Building
-
-### Using build script:
+### Quick Build
 ```bash
-chmod +x build.sh
 ./build.sh
 ```
 
-### Manual build:
+### Manual Build
 ```bash
 mkdir -p obj
 gcc -Wall -Wextra -Iinclude -c src/main.c -o obj/main.o
 gcc -Wall -Wextra -Iinclude -c src/builtins.c -o obj/builtins.o
-gcc obj/main.o obj/builtins.o -o myshell
+gcc -Wall -Wextra -Iinclude -c src/error.c -o obj/error.o
+gcc obj/main.o obj/builtins.o obj/error.o -o myshell
 ```
 
-## Usage Examples
+## 📖 Usage
 
-### Basic Commands
+Start the shell:
+```bash
+./myshell
+```
+
+### Examples
+
+**File Operations**
 ```bash
 myshell> ls -la
 myshell> pwd
-myshell> echo "Hello World"
+myshell> cat README.md
 ```
 
-### Built-in Commands
+**Redirection & Piping**
 ```bash
-myshell> cd /home/user
-myshell> cd ..
-myshell> exit
-```
+# Redirect output
+myshell> echo "Hello" > file.txt
 
-### I/O Redirection
-```bash
-# Output redirection
-myshell> ls -la > files.txt
-myshell> echo "test" > output.txt
-
-# Input redirection
-myshell> wc -l < input.txt
-myshell> sort < unsorted.txt
-
-# Both together
-myshell> sort < input.txt > sorted.txt
-```
-
-### Piping
-```bash
-# Simple pipe (2 commands)
-myshell> ls -la | grep txt
-
-# Multiple pipes (3 commands)
-myshell> cat file.txt | grep error | wc -l
-
-# Even more pipes (4+ commands)
-myshell> ps aux | grep user | awk '{print $2}' | sort | head -5
-
-# With redirection
-myshell> cat < input.txt | sort | uniq > output.txt
+# Pipe commands
+myshell> cat file.txt | grep "H" | wc -l
 
 # Complex pipeline
-myshell> cat /var/log/syslog | grep ERROR | cut -d' ' -f5- | sort | uniq -c | sort -rn
+myshell> ps aux | grep user | sort | head -5
 ```
 
-**Note**: Supports **unlimited number of pipes** using loop-based implementation!
-
-### Background Execution
+**Background Jobs**
 ```bash
 myshell> sleep 10 &
-[Background] PID: 1234
-
-myshell> long_running_command &
+[Background] PID: 12345
 ```
 
-## Architecture
+**Configuration**
+Create a `~/.myshellrc` file to run commands at startup:
+```bash
+# ~/.myshellrc
+echo "Welcome to myshell!"
+date
+```
 
-### File Structure
+## 🏗️ Architecture
+
+The project is structured for modularity and maintainability:
+
 ```
 myshell/
 ├── src/
-│   ├── main.c          # Main shell logic, REPL, parsing, execution
-│   └── builtins.c      # Built-in command implementations
+│   ├── main.c          # Core logic: REPL, parser, executor
+│   ├── builtins.c      # Built-in command implementations
+│   └── error.c         # Centralized error handling
 ├── include/
-│   └── builtins.h      # Built-in command headers
-├── obj/                # Object files (generated)
-├── Makefile            # Build configuration
-├── build.sh            # Build script
-└── .gitignore          # Git ignore rules
+│   ├── builtins.h      # Headers for built-ins
+│   └── error.h         # Headers for error handling
+├── obj/                # Compiled object files
+├── build.sh            # Build automation script
+└── README.md           # Documentation
 ```
 
 ### Key Components
 
-#### 1. **Tokenizer** (`tokenize()`)
-- Splits input by whitespace using `strtok()`
-- Dynamic memory allocation
-- Returns NULL-terminated array
+1.  **Tokenizer**: Splits input strings into tokens using `strtok`.
+2.  **Parser**: Converts tokens into `struct command` objects, handling redirection and background flags.
+3.  **Pipeline Splitter**: Breaks command chains by the pipe symbol `|`.
+4.  **Executor**:
+    *   **POSIX**: Uses `fork()`, `pipe()`, `dup2()`, and `execvp()` for full functionality.
+    *   **Windows**: Uses `_spawnvp()` with platform-specific adaptations.
+5.  **Signal Handler**: Manages `SIGINT` to protect the shell process.
 
-#### 2. **Parser** (`parse_command()`)
-- Parses tokens into `struct command`
-- Handles `<`, `>`, `&` operators
-- Separates arguments from operators
+## ⚠️ Limitations
 
-#### 3. **Pipeline Splitter** (`split_pipeline()`)
-- Splits tokens by `|` symbol
-- Creates array of command structures
-- Supports multiple pipes
+- **Job Control**: No support for `fg`, `bg`, or `jobs` commands yet.
+- **Command History**: No up/down arrow navigation (requires readline integration).
+- **Tab Completion**: Not currently implemented.
+- **Environment Variables**: Cannot set/export custom variables (except via `cd`).
+- **Scripting**: No support for control structures like `if` or `while`.
 
-#### 4. **Executor** (`execute_pipeline()`)
-- **POSIX**: Uses `fork()`, `pipe()`, `dup2()`, `execvp()`
-- **Windows**: Limited support with `_spawnvp()`
-- Handles I/O redirection
-- Waits for completion or backgrounds
+## 🤝 Contributing
 
-#### 5. **Built-ins** (`execute_builtin()`)
-- Executes without forking
-- Direct shell process modification
-- Currently: `cd`, `exit`
+Contributions are welcome! Feel free to submit pull requests or open issues for bugs and feature ideas.
 
-## Platform Support
+## 📄 License
 
-### POSIX (Linux, macOS, Unix)
-- ✅ Full pipe support with `fork()`/`exec()`
-- ✅ All features fully functional
-
-### Windows (MinGW, Git Bash)
-- ✅ Basic commands
-- ✅ I/O redirection
-- ⚠️ Limited pipe support (sequential execution fallback)
-- ✅ Background execution
-
-## Technical Details
-
-### Process Management
-- **POSIX**: `fork()` + `execvp()` + `waitpid()`
-- **Windows**: `_spawnvp()` with `_P_WAIT` / `_P_NOWAIT`
-
-### File Descriptors
-- **POSIX**: `open()`, `dup2()`, `close()`
-- **Windows**: `_open()`, `_dup2()`, `_close()`
-
-### Pipe Implementation
-```c
-// Create pipes
-pipe(pipefds + i * 2);
-
-// Child: redirect stdin from previous pipe
-dup2(pipefds[(i-1) * 2], STDIN_FILENO);
-
-// Child: redirect stdout to next pipe
-dup2(pipefds[i * 2 + 1], STDOUT_FILENO);
-
-// Execute command
-execvp(argv[0], argv);
-```
-
-## Limitations
-
-1. **No job control** - Can't bring background jobs to foreground (fg, bg, jobs)
-2. **No job suspension** - Ctrl+Z doesn't suspend processes
-3. **No command history** - No up/down arrow support
-4. **No tab completion** - No auto-complete
-5. **Windows pipes** - Limited to sequential execution
-6. **No environment variables** - Can't set/export variables
-7. **No scripting** - No if/while/for loops
-
-## Future Enhancements
-
-- [ ] Signal handling (SIGINT, SIGTSTP)
-- [ ] Job control (fg, bg, jobs)
-- [ ] Command history with readline
-- [ ] Tab completion
-- [ ] Environment variable support
-- [ ] Scripting support (if, while, for)
-- [ ] Append redirection (`>>`)
-- [ ] Error redirection (`2>`, `2>&1`)
-- [ ] Command substitution
-- [ ] Wildcards and globbing
-
-## License
-
-Educational project - free to use and modify.
-
-## Author
-
-Created as a learning project for understanding Unix shell internals.
+This project is open-source and available for educational and personal use.
