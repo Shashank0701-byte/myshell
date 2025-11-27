@@ -24,4 +24,12 @@ char *read_line(const char *prompt);
  */
 void free_history(void);
 
+/**
+ * Attempt to complete the current input
+ * @param buffer: Current input buffer
+ * @param pos: Current cursor position
+ * @return: New cursor position after completion
+ */
+int complete_input(char *buffer, int pos);
+
 #endif // READLINE_H

@@ -38,6 +38,10 @@ A robust, custom Unix shell implementation in C, designed for educational purpos
   - **`fg`**: Bring a job to the foreground.
   - **`bg`**: Continue a stopped job in the background.
   - Track and manage background processes.
+- **Tab Completion**:
+  - Press **Tab** to auto-complete commands, files, and directories.
+  - Shows all matches if multiple options exist.
+  - Completes to common prefix when possible.
 
 ## 🛠️ Installation & Build
 
@@ -75,6 +79,13 @@ Start the shell:
 myshell> ls -la
 myshell> pwd
 myshell> cat README.md
+```
+
+**Tab Completion**
+```bash
+myshell> ec[TAB]      # Completes to "echo"
+myshell> cd Doc[TAB]  # Completes to "Documents/" if it exists
+myshell> cat RE[TAB]  # Shows: README.md  RESULTS.txt
 ```
 
 **Redirection & Piping**
@@ -143,10 +154,10 @@ myshell/
     *   **Windows**: Uses `_spawnvp()` with platform-specific adaptations.
 5.  **Signal Handler**: Manages `SIGINT` to protect the shell process.
 6.  **Job Manager**: Tracks background jobs, handles `jobs`, `fg`, and `bg` commands.
+7.  **Tab Completion**: Auto-completes commands and file paths using Windows FindFirstFile API.
 
 ## ⚠️ Limitations
 
-- **Tab Completion**: Not currently implemented.
 - **Environment Variables**: Cannot set/export custom variables (except via `cd`).
 - **Scripting**: No support for control structures like `if` or `while`.
 - **Windows Job Control**: `fg` and `bg` commands not supported on Windows.

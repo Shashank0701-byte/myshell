@@ -59,6 +59,169 @@ void free_history(void) {
     history_count = 0;
 }
 
+// Tab completion support
+#ifdef _WIN32
+#include <windows.h>
+#include <direct.h>
+
+/**
+ * Get list of files/directories matching prefix
+ */
+static int get_file_matches(const char *prefix, char matches[][256], int max_matches) {
+    WIN32_FIND_DATA findData;
+    HANDLE hFind;
+    char search_path[512];
+    int count = 0;
+    
+    // Build search pattern
+    snprintf(search_path, sizeof(search_path), "%s*", prefix);
+    
+    hFind = FindFirstFile(search_path, &findData);
+    if (hFind == INVALID_HANDLE_VALUE) {
+        return 0;
+    }
+    
+    do {
+        // Skip . and ..
+        if (strcmp(findData.cFileName, ".") == 0 || strcmp(findData.cFileName, "..") == 0) {
+            continue;
+        }
+        
+        // Add to matches
+        if (count < max_matches) {
+            strncpy(matches[count], findData.cFileName, 255);
+            matches[count][255] = '\0';
+            count++;
+        }
+    } while (FindNextFile(hFind, &findData) && count < max_matches);
+    
+    FindClose(hFind);
+    return count;
+}
+
+/**
+ * Get list of commands matching prefix (built-ins and PATH executables)
+ */
+static int get_command_matches(const char *prefix, char matches[][256], int max_matches) {
+    int count = 0;
+    const char *builtins[] = {"cd", "exit", "jobs", "fg", "bg", NULL};
+    
+    // Check built-in commands
+    for (int i = 0; builtins[i] != NULL && count < max_matches; i++) {
+        if (strncmp(builtins[i], prefix, strlen(prefix)) == 0) {
+            strncpy(matches[count], builtins[i], 255);
+            matches[count][255] = '\0';
+            count++;
+        }
+    }
+    
+    // TODO: Could also search PATH for executables
+    // For now, just return built-ins
+    
+    return count;
+}
+
+/**
+ * Complete the current input
+ */
+int complete_input(char *buffer, int pos) {
+    char matches[50][256];
+    int match_count = 0;
+    char prefix[256] = "";
+    int prefix_start = 0;
+    
+    // Find the word to complete (from last space to cursor)
+    for (int i = pos - 1; i >= 0; i--) {
+        if (buffer[i] == ' ' || buffer[i] == '\t') {
+            prefix_start = i + 1;
+            break;
+        }
+    }
+    
+    // Extract prefix
+    int prefix_len = pos - prefix_start;
+    if (prefix_len > 0) {
+        strncpy(prefix, buffer + prefix_start, prefix_len);
+        prefix[prefix_len] = '\0';
+    }
+    
+    // Determine if we're completing a command or a file
+    int is_first_word = (prefix_start == 0);
+    
+    if (is_first_word) {
+        // Complete command
+        match_count = get_command_matches(prefix, matches, 50);
+        
+        // If no command matches, try files
+        if (match_count == 0) {
+            match_count = get_file_matches(prefix, matches, 50);
+        }
+    } else {
+        // Complete file/directory
+        match_count = get_file_matches(prefix, matches, 50);
+    }
+    
+    if (match_count == 0) {
+        // No matches, beep
+        printf("\a");
+        return pos;
+    } else if (match_count == 1) {
+        // Single match - complete it
+        int completion_len = strlen(matches[0]);
+        int chars_to_add = completion_len - prefix_len;
+        
+        if (pos + chars_to_add < BUFFER_SIZE - 1) {
+            // Add the completion
+            strcpy(buffer + prefix_start, matches[0]);
+            pos = prefix_start + completion_len;
+            buffer[pos] = '\0';
+            
+            // Redraw from prefix_start
+            printf("\r%s", buffer);
+        }
+    } else {
+        // Multiple matches - show them
+        printf("\n");
+        for (int i = 0; i < match_count; i++) {
+            printf("%s  ", matches[i]);
+            if ((i + 1) % 5 == 0) printf("\n");
+        }
+        if (match_count % 5 != 0) printf("\n");
+        
+        // Find common prefix
+        int common_len = strlen(matches[0]);
+        for (int i = 1; i < match_count; i++) {
+            int j = 0;
+            while (j < common_len && matches[i][j] == matches[0][j]) {
+                j++;
+            }
+            common_len = j;
+        }
+        
+        // Complete to common prefix
+        if (common_len > prefix_len) {
+            strncpy(buffer + prefix_start, matches[0], common_len);
+            pos = prefix_start + common_len;
+            buffer[pos] = '\0';
+        }
+        
+        // Redraw prompt and buffer
+        printf("myshell> %s", buffer);
+    }
+    
+    return pos;
+}
+
+#else
+// POSIX stub
+int complete_input(char *buffer, int pos) {
+    (void)buffer;
+    (void)pos;
+    printf("\a");  // Beep - not implemented
+    return pos;
+}
+#endif
+
 #ifdef _WIN32
 // Windows implementation using _getch()
 
@@ -134,6 +297,9 @@ char *read_line(const char *prompt) {
             printf("^C\n");
             buffer[0] = '\0';
             return strdup(buffer);
+        } else if (ch == 9) {
+            // Tab - auto-completion
+            pos = complete_input(buffer, pos);
         } else if (isprint(ch)) {
             // Regular character
             if (pos < BUFFER_SIZE - 1) {
