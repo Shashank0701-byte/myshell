@@ -42,6 +42,10 @@ A robust, custom Unix shell implementation in C, designed for educational purpos
   - Press **Tab** to auto-complete commands, files, and directories.
   - Shows all matches if multiple options exist.
   - Completes to common prefix when possible.
+- **Environment Variable Expansion**:
+  - Supports `$VAR` and `${VAR}` syntax.
+  - Variables are expanded in all command arguments.
+  - Use `\$` to escape dollar signs.
 
 ## 🛠️ Installation & Build
 
@@ -79,6 +83,14 @@ Start the shell:
 myshell> ls -la
 myshell> pwd
 myshell> cat README.md
+```
+
+**Environment Variables**
+```bash
+myshell> echo $HOME
+myshell> echo ${USER}
+myshell> cd $HOME/Documents
+myshell> cat $HOME/.bashrc
 ```
 
 **Tab Completion**
@@ -155,12 +167,13 @@ myshell/
 5.  **Signal Handler**: Manages `SIGINT` to protect the shell process.
 6.  **Job Manager**: Tracks background jobs, handles `jobs`, `fg`, and `bg` commands.
 7.  **Tab Completion**: Auto-completes commands and file paths using Windows FindFirstFile API.
+8.  **Variable Expansion**: Expands `$VAR` and `${VAR}` environment variables in commands.
 
 ## ⚠️ Limitations
 
-- **Environment Variables**: Cannot set/export custom variables (except via `cd`).
 - **Scripting**: No support for control structures like `if` or `while`.
 - **Windows Job Control**: `fg` and `bg` commands not supported on Windows.
+- **Variable Assignment**: Cannot set/export custom variables (only expansion supported).
 
 ## 🤝 Contributing
 

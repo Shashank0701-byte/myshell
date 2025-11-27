@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <ctype.h>
 
 #ifdef _WIN32
 // Windows headers
@@ -67,6 +68,90 @@ void setup_signal_handlers(void) {
     #ifndef _WIN32
     signal(SIGQUIT, SIG_IGN);
     #endif
+}
+
+/**
+ * Expand environment variables in a string
+ * Supports $VAR and ${VAR} syntax
+ * @param input: String with potential variables
+ * @return: New string with variables expanded (must be freed by caller)
+ */
+char *expand_variables(const char *input) {
+    if (!input) return NULL;
+    
+    char *result = malloc(4096);  // Large buffer for expansion
+    if (!result) {
+        error_allocation("expand_variables");
+        return strdup(input);
+    }
+    
+    int result_pos = 0;
+    int i = 0;
+    int len = strlen(input);
+    
+    while (i < len && result_pos < 4095) {
+        if (input[i] == '$') {
+            // Found a variable
+            i++;  // Skip $
+            
+            char var_name[256] = "";
+            int var_pos = 0;
+            int use_braces = 0;
+            
+            // Check for ${VAR} syntax
+            if (i < len && input[i] == '{') {
+                use_braces = 1;
+                i++;  // Skip {
+            }
+            
+            // Extract variable name
+            while (i < len && var_pos < 255) {
+                char c = input[i];
+                
+                if (use_braces) {
+                    if (c == '}') {
+                        i++;  // Skip }
+                        break;
+                    }
+                    var_name[var_pos++] = c;
+                    i++;
+                } else {
+                    // Variable name: alphanumeric and underscore
+                    if (isalnum(c) || c == '_') {
+                        var_name[var_pos++] = c;
+                        i++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            
+            var_name[var_pos] = '\0';
+            
+            // Get environment variable value
+            char *value = getenv(var_name);
+            if (value) {
+                // Copy value to result
+                int value_len = strlen(value);
+                if (result_pos + value_len < 4095) {
+                    strcpy(result + result_pos, value);
+                    result_pos += value_len;
+                }
+            }
+            // If variable not found, just skip it (replace with empty string)
+            
+        } else if (input[i] == '\\' && i + 1 < len && input[i + 1] == '$') {
+            // Escaped dollar sign
+            result[result_pos++] = '$';
+            i += 2;
+        } else {
+            // Regular character
+            result[result_pos++] = input[i++];
+        }
+    }
+    
+    result[result_pos] = '\0';
+    return result;
 }
 
 /**
@@ -175,7 +260,9 @@ char **tokenize(char *line) {
     // Use strtok to split by whitespace
     token = strtok(line, TOKEN_DELIMITERS);
     while (token != NULL) {
-        tokens[position] = token;
+        // Expand environment variables in the token
+        char *expanded = expand_variables(token);
+        tokens[position] = expanded;
         position++;
         
         // Reallocate if we exceed buffer
@@ -194,6 +281,22 @@ char **tokenize(char *line) {
     // NULL-terminate the array
     tokens[position] = NULL;
     return tokens;
+}
+
+/**
+ * Free tokens array (including expanded strings)
+ * @param tokens: Array of tokens to free
+ */
+void free_tokens(char **tokens) {
+    if (!tokens) return;
+    
+    // Free each expanded token string
+    for (int i = 0; tokens[i] != NULL; i++) {
+        free(tokens[i]);
+    }
+    
+    // Free the array itself
+    free(tokens);
 }
 
 /**
@@ -553,7 +656,7 @@ void load_rc_file(void) {
         }
         
         // Free tokens array
-        free(tokens);
+        free_tokens(tokens);
     }
     
     // Cleanup
@@ -621,7 +724,7 @@ int main(void) {
                             free_command(commands[i]);
                         }
                         free(commands);
-                        free(tokens);
+                        free_tokens(tokens);
                         break;
                     }
                 }
@@ -639,7 +742,7 @@ int main(void) {
             }
             
             // Free tokens array
-            free(tokens);
+            free_tokens(tokens);
         }
     }
     
